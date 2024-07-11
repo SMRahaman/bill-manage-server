@@ -39,8 +39,7 @@ async function run() {
 
     app.get("/api/category", async (req, res) => {
       const result = await categoryCollection.find().toArray();
-      res.send(result)
-      ;
+      res.send(result);
     });
 
     // app.get("/api/category", async (req, res) => {
@@ -178,7 +177,6 @@ async function run() {
       res.send(result);
     });
 
-  
     app.get("/api/due-bill/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -194,99 +192,137 @@ async function run() {
       console.log(updatebill);
       const dueBill = {
         $set: {
-          ...updatebill
+          ...updatebill,
         },
       };
       const result = await dueBillCollection.updateOne(filter, dueBill);
       res.send(result);
     });
 
-//For received bill search
-    app.get('/api/filtered-due-bill', async (req, res) => {
+    //For received bill search
+    app.get("/api/filtered-due-bill", async (req, res) => {
       const fromDate = new Date(req.query.fromDate);
       const toDate = new Date(req.query.toDate);
       const supplier = req.query.supplier;
-  
+
       console.log(fromDate, toDate, supplier);
-  
+
       try {
-        const result = await dueBillCollection.aggregate([
-          {
-            $match: {
-              supplierName: supplier,
-              billStatus:'Received',
-              $expr: {
-                $and: [
-                  { $gte: [{ $dateFromString: { dateString: "$billReceiveDate" } }, fromDate] },
-                  { $lte: [{ $dateFromString: { dateString: "$billReceiveDate" } }, toDate] }
-                ]
-              }
-            }
-          }
-        ]).toArray();
+        const result = await dueBillCollection
+          .aggregate([
+            {
+              $match: {
+                supplierName: supplier,
+                billStatus: "Received",
+                $expr: {
+                  $and: [
+                    {
+                      $gte: [
+                        { $dateFromString: { dateString: "$billReceiveDate" } },
+                        fromDate,
+                      ],
+                    },
+                    {
+                      $lte: [
+                        { $dateFromString: { dateString: "$billReceiveDate" } },
+                        toDate,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ])
+          .toArray();
         res.send(result);
       } catch (err) {
-        res.status(500).send({ message: 'Error fetching data', error: err });
+        res.status(500).send({ message: "Error fetching data", error: err });
       }
     });
 
     //Filter Monthly Report by purchase
-  
-    app.get('/api/monthly-report-billStatus', async (req, res) => {
+
+    app.get("/api/monthly-report-billStatus", async (req, res) => {
       const fromDate = new Date(req.query.fromDate);
       const toDate = new Date(req.query.toDate);
       const report = req.query.report;
-      const company=req.query.company;
-      console.log(fromDate, toDate, report);
-  
+      const company = req.query.company;
+      const email = req.query.email;
+      console.log(fromDate, toDate, report, email);
+
       try {
-        const result = await dueBillCollection.aggregate([
-          {
-            $match: {
-              billStatus: report,
-              coampanyVoucher:company,
-              $expr: {
-                $and: [
-                  { $gte: [{ $dateFromString: { dateString: "$billsubmiteDate" } }, fromDate] },
-                  { $lte: [{ $dateFromString: { dateString: "$billsubmiteDate" } }, toDate] }
-                ]
-              }
-            }
-          }
-        ]).toArray();
+        const result = await dueBillCollection
+          .aggregate([
+            {
+              $match: {
+                billStatus: report,
+                userEmail: email,
+                coampanyVoucher: company,
+                $expr: {
+                  $and: [
+                    {
+                      $gte: [
+                        { $dateFromString: { dateString: "$billsubmiteDate" } },
+                        fromDate,
+                      ],
+                    },
+                    {
+                      $lte: [
+                        { $dateFromString: { dateString: "$billsubmiteDate" } },
+                        toDate,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ])
+          .toArray();
         res.send(result);
       } catch (err) {
-        res.status(500).send({ message: 'Error fetching data', error: err });
+        res.status(500).send({ message: "Error fetching data", error: err });
       }
     });
-//Filter Monthly Report by purchase
-  
-app.get('/api/monthly-report-purchase', async (req, res) => {
-  const fromDate = new Date(req.query.fromDate);
-  const toDate = new Date(req.query.toDate);
-  const report = req.query.report;
-  console.log(fromDate, toDate, report);
+    //Filter Monthly Report by purchase
 
-  try {
-    const result = await dueBillCollection.aggregate([
-      {
-        $match: {
-          purchaseType: report,
-          $expr: {
-            $and: [
-              { $gte: [{ $dateFromString: { dateString: "$purchaseDate" } }, fromDate] },
-              { $lte: [{ $dateFromString: { dateString: "$purchaseDate" } }, toDate] }
-            ]
-          }
-        }
+    app.get("/api/monthly-report-purchase", async (req, res) => {
+      const fromDate = new Date(req.query.fromDate);
+      const toDate = new Date(req.query.toDate);
+      const report = req.query.report;
+      const email = req.query.email;
+      console.log(fromDate, toDate, report, email);
+      try {
+        const result = await dueBillCollection
+          .aggregate([
+            {
+              $match: {
+                userEmail: email,
+                purchaseType: report,
+                $expr: {
+                  $and: [
+                    {
+                      $gte: [
+                        { $dateFromString: { dateString: "$purchaseDate" } },
+                        fromDate,
+                      ],
+                    },
+                    {
+                      $lte: [
+                        { $dateFromString: { dateString: "$purchaseDate" } },
+                        toDate,
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ])
+          .toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ message: "Error fetching data", error: err });
       }
-    ]).toArray();
-    res.send(result);
-  } catch (err) {
-    res.status(500).send({ message: 'Error fetching data', error: err });
-  }
-});
-
+    });
 
     //user collection
     app.post("/api/user", async (req, res) => {
