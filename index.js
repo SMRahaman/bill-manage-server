@@ -6,7 +6,17 @@ const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 //middelware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5174",
+      "http://localhost:5173",
+      "https://glittery-puppy-29e3bc.netlify.app",
+      "http://bill-manage-system.surge.sh",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 //MongoDB Connection
